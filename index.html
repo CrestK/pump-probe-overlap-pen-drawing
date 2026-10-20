@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beam Overlap Drawing</title>
+<meta name="description" content="Pen-plotter drawing of two crossed Gaussian beams as a 3-D contour plot, one SVG per pen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Tokens and controls shared with the focal-overlap page. Layout: the control rack on the left, the sheet of
+   paper (drawn at the pen's real line width) and the downloads on the right. */
+:root {
+  --bg: #edf0f3;
+  --panel: #fbfcfd;
+  --panel-2: #f3f5f8;
+  --ink: #111720;
+  --ink-2: #465062;
+  --muted: #737d8e;
+  --rule: #d8dde5;
+  --accent: #2b52c4;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2e8f8;
+  --series: #2a78d6;
+  --series-ref: #898781;
+  --grid: #e4e7ec;
+  --axis: #c3c8d0;
+  --good: #0ca30c;
+  --warn: #d48c00;
+  --bad: #d03b3b;
+  --seq: #f4f8fe, #cde2fb, #9ec5f4, #6da7ec, #3987e5, #256abf, #184f95, #0d366b;
+  --map-line: #0b1320;
+  --scene: #05070b;
+  --scene-ink: #c3ccd8;
+  --scene-dim: #6d7787;
+  --scene-rule: rgba(255, 255, 255, 0.11);
+  --shadow: 0 1px 2px rgba(17, 23, 32, 0.06), 0 6px 24px rgba(17, 23, 32, 0.06);
+
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.75rem;
+  --fs-hero: 3.5rem;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0e13;
+    --panel: #12171f;
+    --panel-2: #181e28;
+    --ink: #edf1f6;
+    --ink-2: #b3bcc9;
+    --muted: #858fa0;
+    --rule: #252d3a;
+    --accent: #8ea8ff;
+    --accent-ink: #0b0e13;
+    --accent-soft: #1d2741;
+    --series: #3987e5;
+    --series-ref: #898781;
+    --grid: #202733;
+    --axis: #384252;
+    --good: #2bbf2b;
+    --warn: #fab219;
+    --bad: #e66767;
+    --seq: #141a24, #15243c, #184f95, #256abf, #3987e5, #6da7ec, #9ec5f4, #cde2fb;
+    --map-line: #ffffff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0e13;
+  --panel: #12171f;
+  --panel-2: #181e28;
+  --ink: #edf1f6;
+  --ink-2: #b3bcc9;
+  --muted: #858fa0;
+  --rule: #252d3a;
+  --accent: #8ea8ff;
+  --accent-ink: #0b0e13;
+  --accent-soft: #1d2741;
+  --series: #3987e5;
+  --series-ref: #898781;
+  --grid: #202733;
+  --axis: #384252;
+  --good: #2bbf2b;
+  --warn: #fab219;
+  --bad: #e66767;
+  --seq: #141a24, #15243c, #184f95, #256abf, #3987e5, #6da7ec, #9ec5f4, #cde2fb;
+  --map-line: #ffffff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+sub, sup { line-height: 0; }
+
+/* ---------- masthead ---------- */
+.masthead { grid-area: head; display: grid; gap: 6px; padding-block: 4px 6px; }
+.eyebrow {
+  margin: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.masthead h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.lede { margin: 0; max-width: 72ch; color: var(--ink-2); }
+
+/* ---------- control rack ---------- */
+.rack {
+  grid-area: ctrl;
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  max-height: calc(100vh - env(safe-area-inset-top, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  align-content: start;
+}
+.rack-section {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.rack-section:last-child { border-bottom: 0; }
+.rack-title, .rack-section > legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rack-section > legend + * { clear: both; }
+.rack-note { margin: 0; color: var(--ink-2); font-size: var(--fs-sm); }
+.derived {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--rule);
+}
+.swatch-tag { font-family: var(--font-ui); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); margin-left: auto; }
+
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl-top { display: flex; align-items: baseline; gap: 8px; }
+.ctl-top label { font-weight: 500; }
+.ctl-hint { color: var(--muted); font-size: var(--fs-xs); margin-left: auto; text-align: right; }
+.ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.ctl-row input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); height: 22px; }
+.num {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--panel-2);
+  padding-right: 8px;
+}
+.num:focus-within { border-color: var(--accent); }
+.num input {
+  width: 74px;
+  border: 0;
+  background: transparent;
+  padding: 4px 4px 4px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.num input::-webkit-outer-spin-button, .num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.num input:focus { outline: none; }
+.unit { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--muted); min-width: 3.2em; }
+.check { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-2); }
+.check input { accent-color: var(--accent); margin: 0; }
+
+.seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.seg button {
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-checked="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 0 0 1px var(--rule), 0 1px 2px rgba(0,0,0,.08); }
+.seg-wide { display: grid; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.chips button:hover { border-color: var(--accent); color: var(--ink); }
+
+.btn {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  min-width: 0;
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 16px 12px;
+}
+.card-head > div:first-child { min-width: 0; flex: 1 1 260px; }
+.card h2 { margin: 0; font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 650; }
+.card .sub { margin: 2px 0 0; color: var(--ink-2); font-size: var(--fs-sm); max-width: 70ch; }
+.card-body { padding: 0 16px 16px; display: grid; gap: 12px; }
+.app {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 20px 48px;
+  display: grid;
+  grid-template-columns: minmax(300px, 344px) minmax(0, 1fr);
+  grid-template-areas:
+    "head head"
+    "ctrl sheet"
+    "ctrl howto";
+  column-gap: 20px;
+  row-gap: 16px;
+  align-items: start;
+}
+.masthead a { color: var(--accent); }
+.sheet { grid-area: sheet; }
+.howto { grid-area: howto; }
+
+.paper-stage {
+  background: var(--panel-2);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 20px;
+  overflow: auto;
+  max-height: 78vh;
+}
+.paper {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 980px;
+  box-shadow: 0 1px 2px rgba(17, 23, 32, 0.12), 0 8px 28px rgba(17, 23, 32, 0.12);
+}
+.paper svg { display: block; width: 100%; height: auto; }
+.paper[data-zoom="2"] { width: 200%; max-width: none; }
+.paper[data-zoom="4"] { width: 400%; max-width: none; }
+
+.pens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pen {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+.pen-head { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.pen-head .swatch-tag { margin-left: auto; }
+.pen dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: var(--fs-sm); }
+.pen dt { color: var(--ink-2); }
+.pen dd { margin: 0; font-family: var(--font-mono); font-size: var(--fs-xs); text-align: right; font-variant-numeric: tabular-nums; align-self: center; }
+.pen .btn { justify-self: start; }
+.facts { margin: 0; color: var(--ink-2); font-size: var(--fs-sm); }
+.facts b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.color-row { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.color-row label { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-2); }
+.color-row input[type="color"] { width: 32px; height: 24px; padding: 0; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel-2); cursor: pointer; }
+.field { display: grid; gap: 4px; }
+.field label { font-weight: 500; }
+.field select {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--panel-2);
+  padding: 5px 8px;
+  font-size: var(--fs-sm);
+}
+
+.howto .card-body { gap: 14px; }
+.howto ol, .howto ul { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; max-width: 78ch; color: var(--ink-2); }
+.howto p { margin: 0; max-width: 78ch; color: var(--ink-2); }
+.howto h3 { margin: 4px 0 0; font-size: var(--fs-md); font-weight: 600; }
+.howto b { color: var(--ink); }
+.howto a { color: var(--accent); }
+.howto-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; }
+.howto-cols > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+
+@media (max-width: 1040px) {
+  .pens, .howto-cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "sheet" "ctrl" "howto";
+    padding-inline: 16px;
+  }
+  .rack { position: static; max-height: none; overflow: visible; }
+  .paper-stage { padding: 12px; max-height: none; }
+}
+@media (max-width: 480px) {
+  .seg button { padding: 5px 7px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="masthead">
+    <p class="eyebrow">Pen plotter · two Gaussian beams in vacuum</p>
+    <h1>Beam Overlap Drawing</h1>
+    <p class="lede">A pump and a probe beam, two Gaussian beams crossing in a pump–probe experiment, as a 3-D contour plot for a pen plotter. Each beam is drawn as its 1/e² envelope plus slices across the beam. In every slice the intensity contours are concentric rings, so you can follow the intensity along the beam: the rings crowd into the focus and thin out where the beam spreads. Underneath, the 2PA and 1PA signal show where along z each process happens. Each beam is one pen and one SVG.</p>
+  </header>
+
+  <aside class="rack" id="controls" aria-label="Controls">
+    <div class="rack-section">
+      <h2 class="rack-title">Setups</h2>
+      <div class="chips" id="presets" aria-label="Example drawings"></div>
+      <p class="rack-note" id="from-page" hidden></p>
+    </div>
+
+    <fieldset class="rack-section">
+      <legend><span class="swatch" id="probe-swatch"></span>Probe<span class="swatch-tag">along z</span></legend>
+      <div data-ctl="probe.lambda"></div>
+      <div data-ctl="probe.w0"></div>
+      <div data-ctl="probe.half"></div>
+      <div data-ctl="probe.slices"></div>
+      <p class="derived" id="probe-derived"></p>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend><span class="swatch" id="pump-swatch"></span>Pump<span class="swatch-tag">crosses at θ</span></legend>
+      <div data-ctl="pump.lambda"></div>
+      <div data-ctl="pump.w0"></div>
+      <div data-ctl="pump.half"></div>
+      <div data-ctl="pump.slices"></div>
+      <p class="derived" id="pump-derived"></p>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend>Geometry</legend>
+      <div data-ctl="angle"></div>
+      <p class="rack-note">Offset of the pump focus from the probe focus.</p>
+      <div data-ctl="dx"></div>
+      <div data-ctl="dy"></div>
+      <div data-ctl="dz"></div>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend>Contours</legend>
+      <div class="seg seg-wide" role="radiogroup" aria-label="Contour levels relative to" id="scale">
+        <button type="button" role="radio" data-v="absolute">Focal peak</button>
+        <button type="button" role="radio" data-v="slice">Each slice's peak</button>
+      </div>
+      <p class="rack-note" id="scale-desc"></p>
+      <div data-ctl="levels"></div>
+      <div class="seg seg-wide" role="radiogroup" aria-label="Level spacing" id="spacing">
+        <button type="button" role="radio" data-v="linear">Even in intensity</button>
+        <button type="button" role="radio" data-v="log">Even in log intensity</button>
+      </div>
+      <p class="derived" id="levels-derived"></p>
+      <div data-ctl="pitch"></div>
+      <label class="check"><input type="checkbox" id="outline"> 1/e² ring on every slice</label>
+      <label class="check"><input type="checkbox" id="envelope"> 1/e² envelope along each beam</label>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend>Signal along z</legend>
+      <label class="check"><input type="checkbox" id="signals"> 1PA and 2PA signal under the beams</label>
+      <p class="rack-note">Signal generated per µm of depth along the z axis, with a line at every probe slice. 2PA (a pump and a probe photon absorbed together) goes as ∫ I<sub>pump</sub>·I<sub>probe</sub> dx dy, so it comes only from where the beams overlap. 1PA goes as ∫ I dx dy, the beam power, which is the same at every depth. Both curves hold the same area, the same total signal.</p>
+      <div data-ctl="panel"></div>
+      <div data-ctl="hatch"></div>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend>View</legend>
+      <div data-ctl="azimuth"></div>
+      <div data-ctl="elevation"></div>
+      <div data-ctl="stretch"></div>
+    </fieldset>
+
+    <fieldset class="rack-section">
+      <legend>Paper and pens</legend>
+      <div class="field">
+        <label for="paper">Paper</label>
+        <select id="paper">
+          <option value="a5">A5 landscape · 210 × 148 mm</option>
+          <option value="a4cut">Cut A4 · 210 × 200 mm</option>
+          <option value="a4">A4 portrait · 210 × 297 mm</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div data-ctl="paper.w"></div>
+      <div data-ctl="paper.h"></div>
+      <div data-ctl="paper.margin"></div>
+      <div data-ctl="pen"></div>
+      <div class="color-row">
+        <label><input type="color" id="probe-color"> Probe ink</label>
+        <label><input type="color" id="pump-color"> Pump ink</label>
+      </div>
+      <label class="check"><input type="checkbox" id="ticks"> Corner ticks in both files</label>
+      <p class="rack-note">Only needed if you plot the two colours as separate jobs. Loaded together, strek keeps the layers registered without them.</p>
+    </fieldset>
+  </aside>
+
+  <section class="card sheet" aria-labelledby="sheet-title">
+    <header class="card-head">
+      <div>
+        <h2 id="sheet-title">Drawing</h2>
+        <p class="sub">Both pens on the sheet, at the pen's real line width. Where rings pack tighter than the line, the ink overlaps and shades the bright core.</p>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="Zoom" id="zoom">
+        <button type="button" role="radio" data-v="1">Fit</button>
+        <button type="button" role="radio" data-v="2">2×</button>
+        <button type="button" role="radio" data-v="4">4×</button>
+      </div>
+    </header>
+    <div class="paper-stage">
+      <div class="paper" id="paper-view" data-zoom="1" role="img" aria-label="Preview of the pen-plotter drawing"></div>
+    </div>
+    <div class="card-body" style="padding-top: 14px;">
+      <p class="facts" id="facts"></p>
+      <div class="pens">
+        <div class="pen">
+          <div class="pen-head"><span class="swatch" id="probe-swatch-2"></span>Probe pen<span class="swatch-tag">beam-overlap-probe.svg</span></div>
+          <dl id="probe-stats"></dl>
+          <button class="btn primary" type="button" data-download="probe">Download probe SVG</button>
+        </div>
+        <div class="pen">
+          <div class="pen-head"><span class="swatch" id="pump-swatch-2"></span>Pump pen<span class="swatch-tag">beam-overlap-pump.svg</span></div>
+          <dl id="pump-stats"></dl>
+          <button class="btn primary" type="button" data-download="pump">Download pump SVG</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card howto" aria-labelledby="howto-title">
+    <header class="card-head">
+      <div>
+        <h2 id="howto-title">Plotting it</h2>
+        <p class="sub">Made for <a href="https://mhellevang.github.io/strek/">strek</a> on a Bambu Lab P2S with a pen module, and works with any tool that reads SVG polylines.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <div class="howto-cols">
+        <div>
+          <h3>With strek</h3>
+          <ol>
+            <li>Download both SVGs.</li>
+            <li>Open strek and drop <b>both files at once</b>. Each file becomes one pen layer, and layers loaded together share one placement, so the colours line up. Layers plot top to bottom; put the lighter ink first so the darker lines stay crisp where they cross.</li>
+            <li>Pick the same paper as here. The drawing already fits inside the margin, so strek plots it at 100% and centres it on the sheet.</li>
+            <li>Download the G-code and run it. The printer pauses after homing for you to mount the first pen, and again between layers to swap pens. Don't move the sheet.</li>
+          </ol>
+        </div>
+        <div>
+          <h3>The files</h3>
+          <ul>
+            <li>1 SVG unit = 1 mm. The page size is the paper size, and the strokes are plain <code>&lt;polyline&gt;</code>s with no transforms, fills or text.</li>
+            <li>Strokes are ordered to keep pen-up travel short, and each ring starts at the vertex closest to where the last stroke ended.</li>
+            <li>Rings are kept at least the minimum ring spacing apart, measured on each ellipse's narrow axis. Below the line width they overlap and build up shading; tighter rings would only pile ink on ink, so they are left out and counted as skipped.</li>
+            <li>Plot times use strek's default speeds (150 mm/s drawing, 200 mm/s travel, a 3 mm lift per stroke).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="overlap.js"></script>
+<script src="plotter.js"></script>
+<script src="plot.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "pump-probe-overlap-pen-drawing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pen-plotter drawing of two crossed Gaussian pump and probe beams as a 3-D contour plot, with the 1PA and 2PA signal along z. One SVG per pen.",
+  "scripts": {
+    "test": "node --test",
+    "plot": "node scripts/plot-svg.js"
+  }
+}
